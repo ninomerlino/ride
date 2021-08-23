@@ -20,7 +20,7 @@ class Custom{
     return Text(value, style: TextStyle(color: color, fontSize: size, decoration:  decoration), textAlign: align,);
   }
   static Container newAutoText(String value, BuildContext context, {Color color = empty, double fontSize = 30, TextDecoration decoration = TextDecoration.none, TextAlign align = TextAlign.left
-  , double? heightScale, double? widthScale}){
+  , double? heightScale, double? widthScale, int maxLines = 1}){
     if(color == empty){
       color = foreground;
     }
@@ -31,11 +31,10 @@ class Custom{
       width: widthScale ,
       height: heightScale,
       child: FittedBox(
-        child: Text(value, style: TextStyle(color: color, fontSize: fontSize, decoration:  decoration), textAlign: align,)
+        child: Text(value, style: TextStyle(color: color, fontSize: fontSize, decoration:  decoration), maxLines: maxLines, textAlign: align,)
       ),
     );
   }
-
   static FutureBuilder<Widget> newAsyncWidget(Future<Widget> target){
     return FutureBuilder(future: target, builder: (BuildContext context, AsyncSnapshot<Widget> snapshot){
       if(snapshot.hasData){
@@ -54,6 +53,20 @@ class Custom{
       }
     });
   }
+
+  static Widget newMapInfoRow(String fieldName, String fieldValue, double max){
+    return Padding(
+      padding: EdgeInsets.fromLTRB(0, max*0.02, 0, 0),
+      child:Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(fieldName, style: TextStyle(fontSize: max*0.030, color: Custom.secondary)),
+          Flexible(child: Text(fieldValue, style: TextStyle(fontSize: max*0.03, color: Custom.foreground), maxLines: 2, textAlign: TextAlign.end,),)
+        ],
+      )
+    );
+  }
+
   static Widget debugBox(Widget child, {Color color = Colors.white}){
     return Container(
     color: color,

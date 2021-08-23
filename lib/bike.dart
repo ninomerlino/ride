@@ -1,13 +1,14 @@
 import 'dart:convert';
-
+import 'dart:math';
 import 'package:location/location.dart';
 import 'package:http/http.dart';
 import 'package:connectivity/connectivity.dart';
 
 double toPrecision(double value, {int precision = 1}){
-  value = value * 10 * precision;
+  double factor = pow(10, precision).toDouble();
+  value *= factor;
   value = value.roundToDouble();
-  value = value/(10 * precision);
+  value = value/factor;
   return value;
 }
 String toDegreeFormat(double angle){
@@ -28,9 +29,13 @@ class FrequencyList{//the structure stores a list of values and the frequencies 
   Map<double, int> _data = Map();
   double? _last;
   double? _max;
-  void push(double value){
-    value = toPrecision(value);
-    if( value < 1){_last = null; return;}//ignore all value under or equal to 0.1 this speeds are not valid speeds
+
+  void push(double? value){
+    if(value == null){
+      _last = null;
+      return;
+    }
+    value = toPrecision(value!);
     _last = value;
     if(_max == null || value > _max!)_max = value;
     if(_data.containsKey(value)){
@@ -60,16 +65,18 @@ class FrequencyList{//the structure stores a list of values and the frequencies 
 
 class TravelTimer{//
   Duration _timer = Duration(seconds: 0);
-  DateTime _start = DateTime.now();
+  DateTime? _start;
   bool _running = false;
 
   bool get running{
     return _running;
   }
-  int get count{//return time elapsed in seconds
-    DateTime now = DateTime.now();
-    _timer += now.difference(_start);
-    _start = now;
+  int get count{
+    if(running){
+      DateTime now = DateTime.now();
+      _timer += now.difference(_start!);
+      _start = now;
+    }
     return _timer.inSeconds;
   }
   void start(){
@@ -77,8 +84,13 @@ class TravelTimer{//
     _start = DateTime.now();
   }
   void stop(){
-    _running = false;
-    _timer += DateTime.now().difference(_start);
+    if(_start != null){
+      _running = false;
+      _timer += DateTime.now().difference(_start!);
+    }
+  }
+  void reset(){
+    _timer = Duration(seconds: 0);
   }
 }
 
@@ -94,24 +106,37 @@ class Bike{
   TravelTimer _timer = TravelTimer();
   Location _gps = Location();
   Map<String, String> _map_position = {"country":"","state":"","county":"","city":""};
+  Function? onDataUpdate;
   //falgs
   bool _essentials = false;
   bool active = false;
   bool _background_mode = false;
   bool _connection_available = false;
   //settings
-  int _update_period = 250;//ms
-  LocationAccuracy _energy_consumption = LocationAccuracy.high;
+  int _update_period = 500;//ms
+  LocationAccuracy _accuracy = LocationAccuracy.navigation;
 
-  Bike(){
-    _gps.changeSettings(accuracy: _energy_consumption);
-    _essentials_permissions_handler().then((bool value){active = value;_essentials = value; _non_essential_permissions_handler(); updateData();});
+  Bike({Function? onDataUpdate, LocationAccuracy? accuracy}){
+    if(onDataUpdate != null)this.onDataUpdate = onDataUpdate;
+    if(accuracy != null)this.accuracy = accuracy;
+    _essentials_permissions_handler().then((bool value){
+      active = value;
+      if(active){
+        _non_essential_permissions_handler();
+        start();
+      }
+    });
   }
 
   void start(){
     active = true;
-    updateData();
+    _gps.onLocationChanged.listen(updateData);
+    _gps.changeSettings(interval: _update_period);
     updateMapPosition();
+  }
+
+  void stop(){
+    active = false;
   }
 
   Future<bool> _essentials_permissions_handler() async{
@@ -139,27 +164,24 @@ class Bike{
     }
   }
 
-  Future<void> updateData() async{
-    while(active){
-      LocationData info = await _gps.getLocation();
-      if(info.speed == 0 && _timer.running){
-        _timer.stop();
-      }else if(info.speed != 0 && !_timer.running){
-        _timer.start();
-      }
-      _speed.push(info.speed!);
+  void updateData(LocationData info){
+    if(active){
+        if(info.speed != null && info.speed! >= 3.6){
+          if(!_timer.running)_timer.start();
+          _speed.push(info.speed!);
+        }else{
+          if(_timer.running)_timer.stop();
+          _speed.push(null);
+        }
       _altitude = info.altitude!;
       _longitude = info.longitude!;
       _latitude = info.latitude!;
-      await Future.delayed(Duration(milliseconds: _update_period));
+      if(onDataUpdate != null){onDataUpdate!();}
     }
   }
 
   Future<void> updateMapPosition() async {
     while(active){
-      for(String key in _map_position.keys){
-        _map_position[key] = "No Data";
-      }
       ConnectivityResult connectionStatus = await _connection.checkConnectivity();
       if(connectionStatus == ConnectivityResult.none){
         _connection_available = false;
@@ -170,6 +192,7 @@ class Bike{
         if(response.statusCode != 200){
           _connection_available = false;
         }else{
+          _connection_available = true;
           Map data = _decoder.convert(response.body);
           if(data.containsKey("address")){
            data = data["address"];
@@ -187,6 +210,10 @@ class Bike{
       }
       Future.delayed(Duration(seconds: 1));
     }
+  }
+
+  void resetTimer(){
+    _timer.reset();
   }
 
   String speedToString(double? value, String unit, {double conversion = 1}){
@@ -216,7 +243,7 @@ class Bike{
   }
   List<String> get position {
     List<String> data = [];
-    data.add( toPrecision(_latitude, precision: 4).toString()+" m");
+    data.add( _altitude.floor().toString()+" m");
     data.add( toDegreeFormat(_latitude));
     data.add( toDegreeFormat(_longitude));
     return data;
@@ -227,24 +254,40 @@ class Bike{
   }
   String get travelTime{
     String output = "";
+    int temp = 0;
     int seconds = _timer.count;
     if(seconds >= 86400){//days
-      output += (seconds/86400).toString() + " d ";
+      output += (seconds~/86400).toString() + " d ";
       seconds %= 86400;
     }
     if(seconds >= 3600){//hours
-      output += (seconds/3600).toString() + ":";
+      temp = (seconds~/3600);
+      if(temp < 10){
+        output += "0"+ temp.toString() + ":";
+      }else{
+        output += temp.toString() + ":";
+      }
       seconds %= 3600;
     }else{
       output += "00:";
     }
     if(seconds >= 60){
-      output += (seconds/60).toString() + ":";
+      temp = (seconds~/60);
+      if(temp < 10){
+        output += "0"+ temp.toString() + ":";
+      }else{
+        output += temp.toString() + ":";
+      }
       seconds %= 60;
     }else{
       output += "00:";
     }
-    output += seconds.toString();
+    temp = seconds;
+    if(temp < 10){
+      output += "0"+ temp.toString();
+    }else{
+      output += temp.toString();
+    }
     return output;
   }
   bool get hasEssentials{
@@ -256,10 +299,17 @@ class Bike{
   bool get hasConnection{
     return _connection_available;
   }
-  double get distance{
-    return _speed.sum * _update_period / 1000;
+  String get distance{
+    return (_speed.sum * _update_period ~/ 1000).toString() + " m";
   }
-  double get distance_km{
-    return _speed.sum * _update_period / 1000000;
+  String get distance_km{
+    return toPrecision((_speed.sum * _update_period / 1000000.0), precision: 3).toString() + " Km";
   }
+
+  //-----------------------setter----------------------
+set accuracy(LocationAccuracy accuracy){
+    _gps.changeSettings(accuracy: accuracy);
+    _accuracy = accuracy;
+}
+
 }
