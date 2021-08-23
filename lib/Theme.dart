@@ -1,57 +1,65 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class Custom{
-  static const Color light = Color.fromRGBO(255,209,102, 1);
-  static const Color light2 = Color.fromRGBO(194, 157, 77, 1.0);
-  static const Color dark = Color.fromRGBO(28,49,68, 1);
-  static const Color dark2 = Color.fromRGBO(66, 73, 97, 1.0);
+  static const Color light = Color.fromRGBO(235, 235, 235, 1);
+  static const Color light2 = Color.fromRGBO(184, 184, 184, 1.0);
+  static const Color dark = Color.fromRGBO(67, 70, 76, 1);
+  static const Color dark2 = Color.fromRGBO(86, 90, 97, 1.0);
   static const Color error = Color.fromRGBO(208,0,0, 1);
   static const Color success = Color.fromRGBO(96,153,45,1);
   static const Color highlight = Color.fromRGBO(224, 109, 6, 1);
   static const Color empty = Color.fromRGBO(0, 0, 0, 0);
+  static const BoxShadow boxShadow = BoxShadow( offset: Offset(0, 1), blurRadius: 0, spreadRadius: 0);
   static String theme = "dark";
 
-  static Text newText(String value, {Color color = empty, double size = 30, TextDecoration decoration = TextDecoration.none}){
+  static Text newText(String value, {Color color = empty, double size = 30, TextDecoration decoration = TextDecoration.none, TextAlign align = TextAlign.justify}){
     if(color == empty){
       color = foreground;
     }
-    return Text(value, style: TextStyle(color: color, fontSize: size, decoration:  decoration));
+    return Text(value, style: TextStyle(color: color, fontSize: size, decoration:  decoration), textAlign: align,);
   }
-  static Container newTile(Widget child, {String? title, double titleSize = 10, int flexPriority = 1}){
-    if(title != null){
-      child = Column(children: [
-        child,
-        Container(margin: EdgeInsets.fromLTRB(0, titleSize, 0, 0,)
-      ],
-      );
+  static Container newAutoText(String value, BuildContext context, {Color color = empty, double fontSize = 30, TextDecoration decoration = TextDecoration.none, TextAlign align = TextAlign.left
+  , double? heightScale, double? widthScale}){
+    if(color == empty){
+      color = foreground;
     }
+    Size size = MediaQuery.of(context).size;
+    if(widthScale != null)widthScale = size.width * widthScale;
+    if(heightScale != null)heightScale = size.height * heightScale;
     return Container(
-        child: Expanded(
-          flex: flexPriority,
-          child: Center(child: child),
-        ),
-      margin: EdgeInsets.all(10),
-      decoration: BoxDecoration(shape: BoxShape.rectangle),
+      width: widthScale ,
+      height: heightScale,
+      child: FittedBox(
+        child: Text(value, style: TextStyle(color: color, fontSize: fontSize, decoration:  decoration), textAlign: align,)
+      ),
     );
   }
 
-  static FutureBuilder<Widget> newAsyncWidget(Future<Widget> target, String errorMessage){
+  static FutureBuilder<Widget> newAsyncWidget(Future<Widget> target){
     return FutureBuilder(future: target, builder: (BuildContext context, AsyncSnapshot<Widget> snapshot){
       if(snapshot.hasData){
         return snapshot.data!;
       }else if(snapshot.hasError){
-        return Center(child: newTile(Column(
+        return Center(child: Container( child : Column(
           children: [
             Icon(Icons.warning, color: foreground,),
-            newText(errorMessage, color: error, size: 10.0)
+            newText(snapshot.error.toString(), color: error, size: 10.0)
           ],
-        )));
+        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), border: Border.all(color: foreground)),
+        ));
       }else{
         return Center(child: LinearProgressIndicator(backgroundColor: background, valueColor: AlwaysStoppedAnimation<Color>(foreground)));
       }
     });
   }
-
+  static Widget debugBox(Widget child, {Color color = Colors.white}){
+    return Container(
+    color: color,
+    child: child,
+    );
+  }
   static Color get background{
     if(theme == "dark"){
       return dark;
@@ -71,6 +79,13 @@ class Custom{
       return light2;
     }else{
       return dark2;
+    }
+  }
+  static Color get secondary2{
+    if(theme == "dark"){
+      return dark2;
+    }else{
+      return light2;
     }
   }
 }

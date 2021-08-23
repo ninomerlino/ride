@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'bike.dart';
 import 'package:ride/Theme.dart';
 
@@ -30,91 +29,87 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _currentPage = 0;
-  Bike bike = Bike();
+  final Bike bike = Bike();
+  final PageController pageController = PageController(initialPage: 0);
+  int _framerate = 500;
+  bool _updateScreen = true;
 
-  void changePage(int index){
-    setState(() {
-      _currentPage = index;
-    });
+  void updatePage(){
+    setState(() {});
   }
-
-  Widget positionTile(){
-    List<double> values = bike.position;
-    return Custom.newTile(
-      Column(
+//--------------------------------speed card-------------------------------
+  Widget speedCard(BuildContext context){
+    double max = MediaQuery.of(context).size.height;
+    return AspectRatio(aspectRatio: 1,
+       child : Container(
+         decoration: BoxDecoration(borderRadius: BorderRadius.circular(max * 0.01), boxShadow: [Custom.boxShadow], color: Custom.background),
+        margin: EdgeInsets.all(max*0.03),
+        padding: EdgeInsets.all(max*0.02),
+        child: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Custom.newAutoText(bike.speed_kmh, context, widthScale: 0.6),
+              Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                Column(
+                  children: [
+                    Custom.newAutoText(bike.max_speed_kmh, context, widthScale: 0.25),
+                    Custom.newText("Max speed", size: 10, color: Custom.secondary),
+                  ],
+                ),
+                 Column(
+                   children: [
+                     Custom.newAutoText(bike.max_speed_kmh, context, widthScale: 0.25),
+                     Custom.newText("Max speed", size: 10, color: Custom.secondary),
+                  ],
+                 ),])
+          ]),
+    ));
+  }
+  //-------------------------------------position card----------------------------------------------
+  Widget positionCard(BuildContext context, String title, String data){
+    double max = MediaQuery.of(context).size.height;
+    return Container(
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(max * 0.01), boxShadow: [Custom.boxShadow], color: Custom.background),
+      margin: EdgeInsets.fromLTRB(max*0.03, max*0.02, max*0.03, 0),
+      padding: EdgeInsets.all(max*0.02),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Custom.newText("Latitude : "+values[0].toString(), size: 20),
-          Custom.newText("Longitude : "+values[1].toString(), size: 20),
-          Custom.newText("Altitude : "+values[2].toString(), size: 20),
+          Custom.newAutoText(title, context, widthScale: 0.3),
+          Custom.newAutoText(data, context, widthScale: 0.4)
         ],
       )
     );
   }
+//---------------------------------------Info card----------------------------------------------------------
 
-  Widget showPage(){
-    if(_currentPage == 0){
-      return Center(
-        child: ListView(
-          children: [
-            Row(
-              children: [
-                Custom.newTile(
-                  Custom.newText(bike.speed_kmh.toString()+" Km/H"),
-                ),
-                Column(
-                  children: [
-                    Custom.newTile(
-                      Custom.newText(bike.max_speed_kmh.toString()+" Km/H", size: 20),
-                      title: "Max speed",
-                      titleSize: 10
-                    ),
-                    Custom.newTile(
-                      Custom.newText(bike.avg_speed_kmh.toString()+" Km/H", size: 20),
-                        title: "Average speed",
-                        titleSize: 10
-                    ),
-                  ],
-                )
-              ],
-            ),
-            Row(
-              children: [
-               positionTile()
-              ],
-            )
-          ],
-          scrollDirection: Axis.vertical,
-        ),
-      );
-    }else if(_currentPage == 1){
 
-    }else if(_currentPage == 2){
-
-    }
-    throw Exception("Invalid page selected with index :" + _currentPage.toString());
-  }
-
+//---------------------------------build------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
+    List pos = bike.position;
     return Scaffold(
-      backgroundColor: Custom.background,
-      body: showPage(),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+      backgroundColor: Custom.secondary2,
+      body: PageView(
+        scrollDirection: Axis.horizontal,
+        controller: pageController,
+        children: [
+          SafeArea(
+              child: Column(
+                children: [
+                  speedCard(context),
+                  positionCard(context, "Altitude :", pos[0]),
+                  positionCard(context, "Latitude :", pos[1]),
+                  positionCard(context, "Longitude :", pos[2]),
+                ],
+              )
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article),
+          Center(
+            child: Custom.newText("pos map sos"),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_applications),
-          ),
+          Custom.newText("pos map ses"),
         ],
-        selectedItemColor: Custom.highlight,
-        currentIndex: _currentPage,
-        onTap: changePage,
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
