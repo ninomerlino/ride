@@ -25,18 +25,35 @@ String toDegreeFormat(double angle){
   return out;
 }
 
+String speedToString(double? value, String unit, {double conversion = 1}){
+  if(value == null){
+    return "-- "+unit;
+  }else{
+    return toPrecision(value/conversion).toString()+" "+unit;
+  }
+}
+
 class FrequencyList{//the structure stores a list of values and the frequencies they are present in the list
   Map<double, int> _data = Map();
   double? _last;
   double? _max;
+  double _total = 0;
+
+  void reset(){
+    _data.clear();
+    _last = null;
+    _max = null;
+    _total = 0;
+  }
 
   void push(double? value){
     if(value == null){
       _last = null;
       return;
     }
-    value = toPrecision(value!);
+    value = toPrecision(value);
     _last = value;
+    _total += value;
     if(_max == null || value > _max!)_max = value;
     if(_data.containsKey(value)){
       _data[value] = _data[value]! + 1;
@@ -50,16 +67,12 @@ class FrequencyList{//the structure stores a list of values and the frequencies 
   double? get max{
     return _max;
   }
-  double get sum{
-    double sum = 0;
-    for(double key in _data.keys){
-      sum += key * _data[key]!.toDouble();
-    }
-    return sum;
-  }
   double? get avg{
     if(_data.length == 0)return null;
-    return toPrecision(sum / _data.length);
+    return toPrecision(_total / _data.length);
+  }
+  double get total{
+    return _total;
   }
 }
 
@@ -211,18 +224,14 @@ class Bike{
       Future.delayed(Duration(seconds: 1));
     }
   }
-
+//--------------------reset options---------------------------------
   void resetTimer(){
     _timer.reset();
   }
-
-  String speedToString(double? value, String unit, {double conversion = 1}){
-    if(value == null){
-      return "-- "+unit;
-    }else{
-      return toPrecision(value/conversion).toString()+" "+unit;
-    }
+  void resetSpeedData(){
+    _speed.reset();
   }
+  //-----------------------getter-------------------------------------------------
   String get speed{
     return speedToString(_speed.last, "m/s");
   }
@@ -300,16 +309,27 @@ class Bike{
     return _connection_available;
   }
   String get distance{
-    return (_speed.sum * _update_period ~/ 1000).toString() + " m";
+    return (_speed.total * _update_period ~/ 1000).toString() + " m";
   }
   String get distance_km{
-    return toPrecision((_speed.sum * _update_period / 1000000.0), precision: 3).toString() + " Km";
+    return toPrecision((_speed.total * _update_period / 1000000.0), precision: 3).toString() + " Km";
   }
-
+  String get accuracyValue{
+    if(_accuracy == LocationAccuracy.high){
+      return "medium";
+    }else if(_accuracy == LocationAccuracy.navigation){
+      return "high";
+    }else if(_accuracy == LocationAccuracy.balanced){
+      return "low";
+    }else{
+      throw Exception("Invalid accuracy");
+    }
+  }
   //-----------------------setter----------------------
 set accuracy(LocationAccuracy accuracy){
     _gps.changeSettings(accuracy: accuracy);
     _accuracy = accuracy;
+    print(accuracy);
 }
 
 }
