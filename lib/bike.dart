@@ -29,7 +29,7 @@ String speedToString(double? value, String unit, {double conversion = 1}){
   if(value == null){
     return "-- "+unit;
   }else{
-    return toPrecision(value/conversion).toString()+" "+unit;
+    return toPrecision(value*conversion).toString()+" "+unit;
   }
 }
 
