@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
 import 'bike.dart';
@@ -80,8 +82,8 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Custom.newAutoText(title, context, widthScale: 0.3),
-          Custom.newAutoText(data, context, widthScale: 0.3)
+          Text(title, style: TextStyle(fontSize: max*0.03, color: Custom.foreground),),
+          Text(data, style: TextStyle(fontSize: max*0.03, color: Custom.foreground),),
         ],
       )
     );
@@ -173,7 +175,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget indicatorBar(BuildContext context){
     double max = MediaQuery.of(context).size.width;
     return Center(
-      child : SmoothPageIndicator(
+      child : Padding(
+        padding: EdgeInsets.fromLTRB(0, 10, 0, 10),
+        child: SmoothPageIndicator(
           count: 3,
           controller: pageController,
           effect: ExpandingDotsEffect(
@@ -181,6 +185,7 @@ class _MyHomePageState extends State<MyHomePage> {
             activeDotColor: Custom.foreground,
           ),
         ),
+      )
     );
   }
   //--------------------------------radio selection-------------------------------------------------------
@@ -197,7 +202,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     updatePage();
   }
-  Widget dropdownSelector(BuildContext context, String fieldName, void Function(Object?) onChanged){
+
+  void changeTheme(Object? value){
+    if(value == null)throw Exception("null value in dropdown menu");
+    Custom.theme = value.toString();
+    updatePage();
+  }
+  Widget dropdownSelector(BuildContext context, String fieldName, List<String>keys, void Function(Object?) onChanged){
       double max = MediaQuery.of(context).size.height;
       return Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(max * 0.01), boxShadow: [Custom.boxShadow], color: Custom.background),
@@ -218,7 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         underline: SizedBox(),
                         dropdownColor: Custom.secondary2,
                         value: bike.accuracyValue,
-                        items : <String>["low","medium","high"].map<DropdownMenuItem<String>>(
+                        items : keys.map<DropdownMenuItem<String>>(
                                 (String value) {
                               return DropdownMenuItem<String>(
                                 value: value,
@@ -233,7 +244,21 @@ class _MyHomePageState extends State<MyHomePage> {
           )
       );
     }
-  //----------------------------------span button-------------------------------------------------------
+  //----------------------------------big button-------------------------------------------------------
+  Widget wideButton(BuildContext context, String text, void Function() onPressed, Color backgroundColor){
+    double max = MediaQuery.of(context).size.height;
+    return Container(
+      margin: EdgeInsets.fromLTRB(max*0.03, max*0.015, max*0.03, 0),
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        child: Center(child: Padding(padding: EdgeInsets.all(max*0.02),child: Text(text, style: TextStyle(fontSize: max*0.03, color: Custom.error.withOpacity(0.9))))),
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.resolveWith((Set states){return backgroundColor;}),
+        ),
+      )
+    );
+  }
 //---------------------------------build------------------------------------------------------------------
 @override
   Widget build(BuildContext context) {
@@ -243,7 +268,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: [
           Flexible(
-            flex: 28,
+            flex: 32,
               child: PageView(
                 scrollDirection: Axis.horizontal,
                 controller: pageController,
@@ -262,7 +287,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   ]),
                   appPage([
                     infoIcon(context, Icons.settings, "Go on mess up the settings"),
-                    dropdownSelector(context, "Position accuracy", changeAccuracy)
+                    dropdownSelector(context, "Position accuracy",["low","medium","high"] , changeAccuracy),
+                    wideButton(context, "Reset timer", bike.resetTimer, Custom.secondary),
+                    wideButton(context, "Reset speed data", bike.resetSpeedData, Custom.secondary),
+                    //dropdownSelector(context, "App theme", ["dark", "light"], changeTheme),
                   ])
                 ],
               ),

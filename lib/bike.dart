@@ -329,7 +329,6 @@ class Bike{
 set accuracy(LocationAccuracy accuracy){
     _gps.changeSettings(accuracy: accuracy);
     _accuracy = accuracy;
-    print(accuracy);
 }
 
 }
