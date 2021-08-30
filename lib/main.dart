@@ -1,10 +1,12 @@
 import 'dart:ui';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
 import 'bike.dart';
 import 'package:ride/Theme.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(MyApp());
@@ -42,6 +44,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void updatePage(){
     setState(() {});
+  }
+
+  Future<void> launchHyperlink(String url) async{
+    print("launch");
+    print(await canLaunch(url));
+    if (await canLaunch(url)) {await launch(url, forceSafariVC: false,);}
   }
 //--------------------------------speed card-------------------------------
   Widget speedCard(BuildContext context){
@@ -137,6 +145,13 @@ class _MyHomePageState extends State<MyHomePage> {
               Custom.newMapInfoRow("County", data["county"], max),
               Custom.newMapInfoRow("State", data["state"], max),
               Custom.newMapInfoRow("Country", data["country"], max),
+              Padding(
+                  padding: EdgeInsets.fromLTRB(0,20,0,0),
+                  child: InkWell(
+                      onTap: (){launchHyperlink("https://osm.org/copyright");},
+                      child:Text("Data © OpenStreetMap contributors, ODbL 1.0. https://osm.org/copyright", style: TextStyle(fontSize: max*0.01, color: Custom.foreground))
+                  )
+              ),
             ],
       );
     }else {
