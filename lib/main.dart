@@ -208,7 +208,8 @@ class _MyHomePageState extends State<MyHomePage> {
     Custom.theme = value.toString();
     updatePage();
   }
-  Widget dropdownSelector(BuildContext context, String fieldName, List<String>keys, void Function(Object?) onChanged){
+
+  Widget dropdownSelector(BuildContext context, String fieldName, List<String>keys, void Function(Object?) onChanged, String defaultValue){
       double max = MediaQuery.of(context).size.height;
       return Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(max * 0.01), boxShadow: [Custom.boxShadow], color: Custom.background),
@@ -228,7 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         icon: Icon(Icons.arrow_downward),
                         underline: SizedBox(),
                         dropdownColor: Custom.secondary2,
-                        value: bike.accuracyValue,
+                        value: defaultValue,
                         items : keys.map<DropdownMenuItem<String>>(
                                 (String value) {
                               return DropdownMenuItem<String>(
@@ -287,10 +288,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   ]),
                   appPage([
                     infoIcon(context, Icons.settings, "Go on mess up the settings"),
-                    dropdownSelector(context, "Position accuracy",["low","medium","high"] , changeAccuracy),
+                    dropdownSelector(context, "App theme", ["dark", "light"], changeTheme, Custom.theme),
+                    dropdownSelector(context, "Position accuracy",["low","medium","high"] , changeAccuracy, bike.accuracyValue),
                     wideButton(context, "Reset timer", bike.resetTimer, Custom.secondary),
                     wideButton(context, "Reset speed data", bike.resetSpeedData, Custom.secondary),
-                    //dropdownSelector(context, "App theme", ["dark", "light"], changeTheme),
                   ])
                 ],
               ),
