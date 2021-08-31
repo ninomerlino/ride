@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:location/location.dart';
-import 'common.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'bike.dart';
 import 'package:ride/uiHelper.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -16,30 +15,38 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Ride',
       theme: ThemeData(
         primarySwatch: Custom.toMaterialColor(Custom.light),
       ),
-      home: MyHomePage(title: 'Ride'),
+      home: MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key, required this.title}) : super(key: key);
-  final String title;
+  final Bike bike = Bike();
+  SharedPreferences? keyStorage;
+  bool preferencesLoaded = false;
+  MyHomePage({Key? key}) : super(key: key);
+
+
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final Bike bike = Bike();
   PageController pageController = PageController(initialPage: 0);
 
-  _MyHomePageState(){
-    bike.onDataUpdate = updatePage;
-    _loadPreferences();
+  Future<void> loadPreferences() async{
+    widget.keyStorage = await SharedPreferences.getInstance();
+    String? value = await widget.keyStorage!.getString("theme");
+    if(value != null)Custom.theme = value;
+    value = await widget.keyStorage!.getString("accuracy");
+    if(value != null)widget.bike.accuracy = value;
+    widget.preferencesLoaded = true;
+    updatePage();
   }
 
   void updatePage(){
@@ -52,30 +59,6 @@ class _MyHomePageState extends State<MyHomePage> {
     if (await canLaunch(url)) {await launch(url, forceSafariVC: false,);}
   }
 
-  Future<bool> _loadPreferences() async{
-    try{
-      Map pref = await readSusfile("data/pref");
-      if(pref.containsKey("accuracy"))bike.accuracy = pref['accuracy'];
-      if(pref.containsKey("theme"))Custom.theme = pref['theme'];
-      return true;
-    }catch(exception){
-      print("---on load pref---");
-      print(exception);
-    }
-    return false;
-  }
-
-  Future<bool> _savePreferences() async{
-    try{
-      Map<String, String> data = {"accuracy":bike.accuracyValue, "theme":Custom.theme};
-      await saveSusfile("data/pref", data);
-      return true;
-    }catch(exception){
-      print("---on save pref---");
-      print(exception);
-    }
-    return false;
-  }
 //--------------------------------speed card-------------------------------
   Widget speedCard(BuildContext context){
     double max = MediaQuery.of(context).size.height;
@@ -86,19 +69,19 @@ class _MyHomePageState extends State<MyHomePage> {
         padding: EdgeInsets.all(max*0.01),
         child: Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Custom.newAutoText(bike.speed_kmh, context, widthScale: 0.5),
+            Custom.newAutoText(widget.bike.speed_kmh, context, widthScale: 0.5),
               Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly, crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                 Column(
                   children: [
-                    Custom.newAutoText(bike.max_speed_kmh, context, widthScale: 0.25),
+                    Custom.newAutoText(widget.bike.max_speed_kmh, context, widthScale: 0.25),
                     Custom.newText("Max speed", size: 10, color: Custom.secondary),
                   ],
                 ),
                  Column(
                    children: [
-                     Custom.newAutoText(bike.avg_speed_kmh, context, widthScale: 0.25),
+                     Custom.newAutoText(widget.bike.avg_speed_kmh, context, widthScale: 0.25),
                      Custom.newText("Average speed", size: 10, color: Custom.secondary),
                   ],
                  ),])
@@ -149,9 +132,9 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text("You traveled for", style: TextStyle(fontSize: max*0.03, color: Custom.secondary)),
-            Text(bike.distance_km, style: TextStyle(fontSize: max*0.035, color: Custom.foreground),),
+            Text(widget.bike.distance_km, style: TextStyle(fontSize: max*0.035, color: Custom.foreground),),
             Text("and it took you", style: TextStyle(fontSize: max*0.03, color: Custom.secondary)),
-            Text(bike.travelTime, style: TextStyle(fontSize: max*0.035, color: Custom.foreground),),
+            Text(widget.bike.travelTime, style: TextStyle(fontSize: max*0.035, color: Custom.foreground),),
           ]
       ),
     );
@@ -160,8 +143,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget mapInfoCard(BuildContext context){
     double max = MediaQuery.of(context).size.height;
     Widget table;
-    if(bike.hasConnection){
-      Map data = bike.mapPosition;
+    if(widget.bike.hasConnection){
+      Map data = widget.bike.mapPosition;
       table = Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -203,6 +186,57 @@ class _MyHomePageState extends State<MyHomePage> {
         child: table
     );
   }
+  //----------------------------------body-----------------------------------------------------------
+  Widget body(BuildContext context){
+    if(widget.preferencesLoaded){
+      if(widget.bike.onDataUpdate == null)widget.bike.onDataUpdate = updatePage;
+      List pos = widget.bike.position;
+      return Column(
+        children: [
+          Flexible(
+            flex: 32,
+            child: PageView(
+              scrollDirection: Axis.horizontal,
+              controller: pageController,
+              children: [
+                appPage([
+                  infoIcon(context, Icons.home, "Your realtime data"),
+                  speedCard(context),
+                  positionCard(context, "Altitude :", pos[0]),
+                  positionCard(context, "Latitude :", pos[1]),
+                  positionCard(context, "Longitude :", pos[2]),
+                ]),
+                appPage([
+                  infoIcon(context, Icons.directions_bike_rounded, "Some info on your journey"),
+                  travelCard(context),
+                  mapInfoCard(context),
+                ]),
+                appPage([
+                  infoIcon(context, Icons.settings, "Go on mess up the settings"),
+                  dropdownSelector(context, "App theme", ["dark", "light"], changeTheme, Custom.theme),
+                  dropdownSelector(context, "Position accuracy",["low","medium","high"] , changeAccuracy, widget.bike.accuracyValue),
+                  wideButton(context, "Reset timer", widget.bike.resetTimer, Custom.secondary),
+                  wideButton(context, "Reset speed data", widget.bike.resetSpeedData, Custom.secondary),
+                ])
+              ],
+            ),
+          ),
+          Flexible(child: indicatorBar(context),),
+        ],
+      );
+    }else{
+      loadPreferences();
+      return Center(
+        child: Padding(
+            padding: EdgeInsets.all(30),
+            child: LinearProgressIndicator(
+              backgroundColor: Custom.background,
+              valueColor: AlwaysStoppedAnimation<Color>(Custom.foreground),
+            )
+        )
+      );
+    }
+  }
 //---------------------------------appPage----------------------------------------------------------------
   SafeArea appPage(List<Widget> children){
     return SafeArea(
@@ -231,15 +265,15 @@ class _MyHomePageState extends State<MyHomePage> {
   //--------------------------------radio selection-------------------------------------------------------
   void changeAccuracy(Object? value){
     if(value == null)throw Exception("null value in dropdown menu");
-    bike.accuracy = value.toString();
-    _savePreferences();
+    widget.bike.accuracy = value.toString();
+    widget.keyStorage?.setString("accuracy", value.toString());
     updatePage();
   }
 
   void changeTheme(Object? value){
     if(value == null)throw Exception("null value in dropdown menu");
     Custom.theme = value.toString();
-    _savePreferences();
+    widget.keyStorage?.setString("theme", value.toString());
     updatePage();
   }
 
@@ -294,45 +328,13 @@ class _MyHomePageState extends State<MyHomePage> {
       )
     );
   }
+
 //---------------------------------build------------------------------------------------------------------
 @override
   Widget build(BuildContext context) {
-    List pos = bike.position;
     return Scaffold(
       backgroundColor: Custom.secondary2,
-      body: Column(
-        children: [
-          Flexible(
-            flex: 32,
-              child: PageView(
-                scrollDirection: Axis.horizontal,
-                controller: pageController,
-                children: [
-                  appPage([
-                    infoIcon(context, Icons.home, "Your realtime data"),
-                    speedCard(context),
-                    positionCard(context, "Altitude :", pos[0]),
-                    positionCard(context, "Latitude :", pos[1]),
-                    positionCard(context, "Longitude :", pos[2]),
-                  ]),
-                  appPage([
-                    infoIcon(context, Icons.directions_bike_rounded, "Some info on your journey"),
-                    travelCard(context),
-                    mapInfoCard(context),
-                  ]),
-                  appPage([
-                    infoIcon(context, Icons.settings, "Go on mess up the settings"),
-                    dropdownSelector(context, "App theme", ["dark", "light"], changeTheme, Custom.theme),
-                    dropdownSelector(context, "Position accuracy",["low","medium","high"] , changeAccuracy, bike.accuracyValue),
-                    wideButton(context, "Reset timer", bike.resetTimer, Custom.secondary),
-                    wideButton(context, "Reset speed data", bike.resetSpeedData, Custom.secondary),
-                  ])
-                ],
-              ),
-          ),
-          Flexible(child: indicatorBar(context),),
-        ],
-      ) // This trailing comma makes auto-formatting nicer for build methods.
+      body: body(context),
     );
   }
 }

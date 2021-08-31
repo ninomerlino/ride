@@ -87,7 +87,7 @@ class Bike{
       _altitude = info.altitude!;
       _longitude = info.longitude!;
       _latitude = info.latitude!;
-      if(onDataUpdate != null){onDataUpdate!();}
+      if(onDataUpdate != null)onDataUpdate!();
     }
   }
 
