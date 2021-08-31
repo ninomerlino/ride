@@ -13,3 +13,11 @@ this page gives you information about the distace you traveled the time it took 
 
 settings page
 
+##Screenshots
+
+![page 1](https://raw.githubusercontent.com/ninomerlino/ride/master/github_images/sc1.png)
+
+![page 2](https://raw.githubusercontent.com/ninomerlino/ride/master/github_images/sc2.png)
+
+![page 3](https://raw.githubusercontent.com/ninomerlino/ride/master/github_images/sc3.png)
+
