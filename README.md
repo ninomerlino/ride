@@ -15,7 +15,7 @@ settings page
 
 ##Screenshots
 
-![page 1](https://raw.githubusercontent.com/ninomerlino/ride/master/github_images/sc1.png =160x90)
+![page 1](https://raw.githubusercontent.com/ninomerlino/ride/master/github_images/sc1.png)
 
 ![page 2](https://raw.githubusercontent.com/ninomerlino/ride/master/github_images/sc2.png)
 
