@@ -1,10 +1,9 @@
 import 'dart:ui';
-
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
+import 'common.dart';
 import 'bike.dart';
-import 'package:ride/Theme.dart';
+import 'package:ride/uiHelper.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
