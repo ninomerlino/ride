@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Custom.toMaterialColor(Custom.light),
       ),
       home: MyHomePage(title: 'Ride'),
     );
@@ -39,6 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   _MyHomePageState(){
     bike.onDataUpdate = updatePage;
+    _loadPreferences();
   }
 
   void updatePage(){
@@ -49,6 +50,31 @@ class _MyHomePageState extends State<MyHomePage> {
     print("launch");
     print(await canLaunch(url));
     if (await canLaunch(url)) {await launch(url, forceSafariVC: false,);}
+  }
+
+  Future<bool> _loadPreferences() async{
+    try{
+      Map pref = await readSusfile("data/pref");
+      if(pref.containsKey("accuracy"))bike.accuracy = pref['accuracy'];
+      if(pref.containsKey("theme"))Custom.theme = pref['theme'];
+      return true;
+    }catch(exception){
+      print("---on load pref---");
+      print(exception);
+    }
+    return false;
+  }
+
+  Future<bool> _savePreferences() async{
+    try{
+      Map<String, String> data = {"accuracy":bike.accuracyValue, "theme":Custom.theme};
+      await saveSusfile("data/pref", data);
+      return true;
+    }catch(exception){
+      print("---on save pref---");
+      print(exception);
+    }
+    return false;
   }
 //--------------------------------speed card-------------------------------
   Widget speedCard(BuildContext context){
@@ -205,21 +231,15 @@ class _MyHomePageState extends State<MyHomePage> {
   //--------------------------------radio selection-------------------------------------------------------
   void changeAccuracy(Object? value){
     if(value == null)throw Exception("null value in dropdown menu");
-    if(value == "medium"){
-      bike.accuracy = LocationAccuracy.high;
-    }else if(value == "low"){
-      bike.accuracy = LocationAccuracy.balanced;
-    }else if(value == "high"){
-      bike.accuracy = LocationAccuracy.navigation;
-    }else{
-      throw Exception("Invalid accuracy : " + value.toString());
-    }
+    bike.accuracy = value.toString();
+    _savePreferences();
     updatePage();
   }
 
   void changeTheme(Object? value){
     if(value == null)throw Exception("null value in dropdown menu");
     Custom.theme = value.toString();
+    _savePreferences();
     updatePage();
   }
 

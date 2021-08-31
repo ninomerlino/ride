@@ -10,6 +10,7 @@ class Custom{
   static const Color success = Color.fromRGBO(96,153,45,1);
   static const Color highlight = Color.fromRGBO(224, 109, 6, 1);
   static const Color empty = Color.fromRGBO(0, 0, 0, 0);
+
   static const BoxShadow boxShadow = BoxShadow( offset: Offset(0, 1), blurRadius: 0, spreadRadius: 0);
   static String theme = "dark";
 

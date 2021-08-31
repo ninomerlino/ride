@@ -28,9 +28,7 @@ class Bike{
   int _update_period = 500;//ms
   LocationAccuracy _accuracy = LocationAccuracy.navigation;
 
-  Bike({Function? onDataUpdate, LocationAccuracy? accuracy}){
-    if(onDataUpdate != null)this.onDataUpdate = onDataUpdate;
-    if(accuracy != null)this.accuracy = accuracy;
+  Bike(){
     _essentials_permissions_handler().then((bool value){
       active = value;
       if(active){
@@ -50,6 +48,7 @@ class Bike{
   void stop(){
     active = false;
   }
+
 
   Future<bool> _essentials_permissions_handler() async{
     bool enabled = await _gps.serviceEnabled();
@@ -225,9 +224,14 @@ class Bike{
     }
   }
   //-----------------------setter----------------------
-set accuracy(LocationAccuracy accuracy){
-    _gps.changeSettings(accuracy: accuracy);
-    _accuracy = accuracy;
-}
+  set accuracy(String value){
+    if(value == "medium"){
+      _accuracy = LocationAccuracy.high;
+    }else if(value == "low"){
+      _accuracy = LocationAccuracy.balanced;
+    }else if(value == "high"){
+      _accuracy = LocationAccuracy.navigation;
+    }
+  }
 
 }

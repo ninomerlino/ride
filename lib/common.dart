@@ -1,5 +1,7 @@
-import 'dart:convert';
 import 'dart:math';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
 
 double toPrecision(double value, {int precision = 1}){
   double factor = pow(10, precision).toDouble();
@@ -30,7 +32,25 @@ String speedToString(double? value, String unit, {double conversion = 1}){
   }
 }
 
-Future<Map> readStoreFile(String assetFilename) async{
-  JsonDecoder decoder;
+Future<Map<String, String>> readSusfile(String assetFilename) async{
+  final directory = await getApplicationDocumentsDirectory();
+  final file = File(directory.path+"/"+assetFilename+".sus");
+  final lines = await file.readAsLines();
+  Map<String, String> data = {};
+  List record;
+  for(String line in lines){
+    record = line.split(":");
+    data[record[0].toString().trim()] = record[1].toString().trim();
+  }
+  return data;
+}
 
+Future<void> saveSusfile(String assetFilename, Map<String, String> data) async{
+  final directory = await getApplicationDocumentsDirectory();
+  final file = File(directory.path+"/"+assetFilename+".sus");
+  String text = "";
+  for(String key in data.keys){
+    text += key+":"+data[key]!+"\n";//null value could make it crash
+  }
+  await file.writeAsString(text);
 }
