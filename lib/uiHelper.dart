@@ -1,25 +1,22 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+
+
 class Custom{
-  static const Color light = Color.fromRGBO(235, 235, 235, 1);
-  static const Color light2 = Color.fromRGBO(184, 184, 184, 1.0);
-  static const Color dark = Color.fromRGBO(67, 70, 76, 1);
-  static const Color dark2 = Color.fromRGBO(86, 90, 97, 1.0);
+  static const Color white = Color.fromRGBO(235, 235, 235, 1);
+  static const Color light_grey = Color.fromRGBO(184, 184, 184, 1.0);
+  static const Color dark_grey = Color.fromRGBO(67, 70, 76, 1);
+  static const Color grey = Color.fromRGBO(86, 90, 97, 1.0);
   static const Color error = Color.fromRGBO(208,0,0, 1);
   static const Color success = Color.fromRGBO(96,153,45,1);
-  static const Color highlight = Color.fromRGBO(224, 109, 6, 1);
+  static const Color orange = Color.fromRGBO(224, 109, 6, 1);
   static const Color empty = Color.fromRGBO(0, 0, 0, 0);
 
   static const BoxShadow boxShadow = BoxShadow( offset: Offset(0, 1), blurRadius: 0, spreadRadius: 0);
   static String theme = "dark";
 
-  static Text newText(String value, {Color color = empty, double size = 30, TextDecoration decoration = TextDecoration.none, TextAlign align = TextAlign.justify}){
-    if(color == empty){
-      color = foreground;
-    }
-    return Text(value, style: TextStyle(color: color, fontSize: size, decoration:  decoration), textAlign: align,);
-  }
+
   static Container newAutoText(String value, BuildContext context, {Color color = empty, double fontSize = 30, TextDecoration decoration = TextDecoration.none, TextAlign align = TextAlign.left
   , double? heightScale, double? widthScale, int maxLines = 1}){
     if(color == empty){
@@ -36,6 +33,7 @@ class Custom{
       ),
     );
   }
+
   static FutureBuilder<Widget> newAsyncWidget(Future<Widget> target){
     return FutureBuilder(future: target, builder: (BuildContext context, AsyncSnapshot<Widget> snapshot){
       if(snapshot.hasData){
@@ -44,7 +42,7 @@ class Custom{
         return Center(child: Container( child : Column(
           children: [
             Icon(Icons.warning, color: foreground,),
-            newText(snapshot.error.toString(), color: error, size: 10.0)
+            Text(snapshot.error.toString(), style: TextStyle(fontSize: 10, color: Custom.error), textAlign: TextAlign.justify)
           ],
         ),
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(20.0), border: Border.all(color: foreground)),
@@ -93,30 +91,30 @@ class Custom{
 
   static Color get background{
     if(theme == "dark"){
-      return dark;
+      return dark_grey;
     }else{
-      return light;
+      return white;
     }
   }
   static Color get foreground{
     if(theme == "dark"){
-      return light;
+      return white;
     }else{
-      return dark;
+      return dark_grey;
     }
   }
   static Color get secondary{
     if(theme == "dark"){
-      return light2;
+      return light_grey;
     }else{
-      return dark2;
+      return grey;
     }
   }
   static Color get secondary2{
     if(theme == "dark"){
-      return dark2;
+      return grey;
     }else{
-      return light2;
+      return light_grey;
     }
   }
 }

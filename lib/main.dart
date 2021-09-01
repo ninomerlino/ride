@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Ride',
       theme: ThemeData(
-        primarySwatch: Custom.toMaterialColor(Custom.light),
+        primarySwatch: Custom.toMaterialColor(Custom.white),
       ),
       home: MyHomePage(),
     );
@@ -76,13 +76,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 Column(
                   children: [
                     Custom.newAutoText(widget.bike.max_speed_kmh, context, widthScale: 0.25),
-                    Custom.newText("Max speed", size: 10, color: Custom.secondary),
+                    Text("Max speed", style: TextStyle(fontSize: 10, color: Custom.secondary), textAlign: TextAlign.justify),
                   ],
                 ),
                  Column(
                    children: [
                      Custom.newAutoText(widget.bike.avg_speed_kmh, context, widthScale: 0.25),
-                     Custom.newText("Average speed", size: 10, color: Custom.secondary),
+                     Text("Average speed", style: TextStyle(fontSize: 10, color: Custom.secondary), textAlign: TextAlign.justify),
                   ],
                  ),])
           ]),
