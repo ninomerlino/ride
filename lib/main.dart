@@ -5,6 +5,7 @@ import 'bike.dart';
 import 'package:ride/uiHelper.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:wakelock/wakelock.dart';
 
 void main() {
   runApp(MyApp());
@@ -28,10 +29,9 @@ class MyHomePage extends StatefulWidget {
   final Bike bike = Bike();
   SharedPreferences? keyStorage;
   bool preferencesLoaded = false;
+  bool wakelockEnabled = true;
+
   MyHomePage({Key? key}) : super(key: key);
-
-
-
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
@@ -41,10 +41,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> loadPreferences() async{
     widget.keyStorage = await SharedPreferences.getInstance();
-    String? value = await widget.keyStorage!.getString("theme");
+    //loading preferences
+    String? value = await widget.keyStorage?.getString("theme");
     if(value != null)Custom.theme = value;
-    value = await widget.keyStorage!.getString("accuracy");
+    value = await widget.keyStorage?.getString("accuracy");
     if(value != null)widget.bike.accuracy = value;
+    bool? flag = await widget.keyStorage?.getBool("wakelock");
+    if(flag != null){
+      widget.wakelockEnabled = flag;
+      Wakelock.toggle(enable: flag);
+    }else{
+      widget.wakelockEnabled = true;
+      Wakelock.enable();
+    }
+
     widget.preferencesLoaded = true;
     updatePage();
   }
@@ -186,57 +196,6 @@ class _MyHomePageState extends State<MyHomePage> {
         child: table
     );
   }
-  //----------------------------------body-----------------------------------------------------------
-  Widget body(BuildContext context){
-    if(widget.preferencesLoaded){
-      if(widget.bike.onDataUpdate == null)widget.bike.onDataUpdate = updatePage;
-      List pos = widget.bike.position;
-      return Column(
-        children: [
-          Flexible(
-            flex: 32,
-            child: PageView(
-              scrollDirection: Axis.horizontal,
-              controller: pageController,
-              children: [
-                appPage([
-                  infoIcon(context, Icons.home, "Your realtime data"),
-                  speedCard(context),
-                  positionCard(context, "Altitude :", pos[0]),
-                  positionCard(context, "Latitude :", pos[1]),
-                  positionCard(context, "Longitude :", pos[2]),
-                ]),
-                appPage([
-                  infoIcon(context, Icons.directions_bike_rounded, "Some info on your journey"),
-                  travelCard(context),
-                  mapInfoCard(context),
-                ]),
-                appPage([
-                  infoIcon(context, Icons.settings, "Go on mess up the settings"),
-                  dropdownSelector(context, "App theme", ["dark", "light"], changeTheme, Custom.theme),
-                  dropdownSelector(context, "Position accuracy",["low","medium","high"] , changeAccuracy, widget.bike.accuracyValue),
-                  wideButton(context, "Reset timer", widget.bike.resetTimer, Custom.secondary),
-                  wideButton(context, "Reset speed data", widget.bike.resetSpeedData, Custom.secondary),
-                ])
-              ],
-            ),
-          ),
-          Flexible(child: indicatorBar(context),),
-        ],
-      );
-    }else{
-      loadPreferences();
-      return Center(
-        child: Padding(
-            padding: EdgeInsets.all(30),
-            child: LinearProgressIndicator(
-              backgroundColor: Custom.background,
-              valueColor: AlwaysStoppedAnimation<Color>(Custom.foreground),
-            )
-        )
-      );
-    }
-  }
 //---------------------------------appPage----------------------------------------------------------------
   SafeArea appPage(List<Widget> children){
     return SafeArea(
@@ -328,8 +287,96 @@ class _MyHomePageState extends State<MyHomePage> {
       )
     );
   }
+//----------------------------------switch card----------------------------------------------------------
 
+  void setWakeLock(bool status){
+    widget.wakelockEnabled = status;
+    Wakelock.toggle(enable: status);
+    widget.keyStorage?.setBool("wakelock", status);
+  }
+
+  Color switchTrackColor(Set states){
+    if(states.contains(MaterialState.selected)){
+      return Custom.success;
+    }else{
+      return Custom.error;
+    }
+  }
+
+  Widget switchCard(String switchName, bool value, void Function(bool) onChanged){
+    double max = MediaQuery.of(context).size.height;
+    return Container(
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(max * 0.01), boxShadow: [Custom.boxShadow], color: Custom.background),
+        margin: EdgeInsets.fromLTRB(max*0.03, max*0.015, max*0.03, 0),
+        padding: EdgeInsets.all(max*0.02),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(switchName, style: TextStyle(fontSize: max*0.02, color: Custom.foreground),),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              thumbColor: MaterialStateProperty.resolveWith((Set states){return Custom.foreground;}),
+              trackColor: MaterialStateProperty.resolveWith(switchTrackColor),
+            ),
+          ],
+        )
+    );
+  }
 //---------------------------------build------------------------------------------------------------------
+
+  Widget body(BuildContext context){
+    if(widget.preferencesLoaded){
+      if(widget.bike.onDataUpdate == null)widget.bike.onDataUpdate = updatePage;
+      List pos = widget.bike.position;
+      return Column(
+        children: [
+          Flexible(
+            flex: 32,
+            child: PageView(
+              scrollDirection: Axis.horizontal,
+              controller: pageController,
+              children: [
+                appPage([
+                  infoIcon(context, Icons.home, "Your realtime data"),
+                  speedCard(context),
+                  positionCard(context, "Altitude :", pos[0]),
+                  positionCard(context, "Latitude :", pos[1]),
+                  positionCard(context, "Longitude :", pos[2]),
+                ]),
+                appPage([
+                  infoIcon(context, Icons.directions_bike_rounded, "Some info on your journey"),
+                  travelCard(context),
+                  mapInfoCard(context),
+                ]),
+                appPage([
+                  infoIcon(context, Icons.settings, "Go on mess up the settings"),
+                  dropdownSelector(context, "App theme", ["dark", "light"], changeTheme, Custom.theme),
+                  dropdownSelector(context, "Position accuracy",["low","medium","high"] , changeAccuracy, widget.bike.accuracyValue),
+                  switchCard("Screen always awake", widget.wakelockEnabled, setWakeLock),
+                  wideButton(context, "Reset timer", widget.bike.resetTimer, Custom.secondary),
+                  wideButton(context, "Reset speed data", widget.bike.resetSpeedData, Custom.secondary),
+                ])
+              ],
+            ),
+          ),
+          Flexible(child: indicatorBar(context),),
+        ],
+      );
+    }else{
+      loadPreferences();
+      return Center(
+          child: Padding(
+              padding: EdgeInsets.all(30),
+              child: LinearProgressIndicator(
+                backgroundColor: Custom.background,
+                valueColor: AlwaysStoppedAnimation<Color>(Custom.foreground),
+              )
+          )
+      );
+    }
+  }
+
 @override
   Widget build(BuildContext context) {
     return Scaffold(
