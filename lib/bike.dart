@@ -97,26 +97,34 @@ class Bike{
       if(connectionStatus == ConnectivityResult.none){
         _connection_available = false;
       }else{
-        Response response = await _client.get(
-            Uri.parse("https://nominatim.openstreetmap.org/reverse.php?lat="+_latitude.toString()+"&lon="+_longitude.toString()+"&zoom=12&format=jsonv2")
-        );
-        if(response.statusCode != 200){
-          _connection_available = false;
-        }else{
-          _connection_available = true;
-          Map data = _decoder.convert(response.body);
-          if(data.containsKey("address")){
-           data = data["address"];
-           if(data.containsKey("country"))_map_position["country"] = data["country"];
-           if(data.containsKey("state"))_map_position["state"] = data["state"];
-           if(data.containsKey("county"))_map_position["county"] = data["county"];
-           if(data.containsKey("village")){
-             _map_position["city"] = data["village"];
-           }
-           else{
-             if(data.containsKey("city"))_map_position["city"] = data["city"];
-           }
+        try{
+          Response response = await _client.get(
+              Uri.parse("https://nominatim.openstreetmap.org/reverse.php?lat="+_latitude.toString()+"&lon="+_longitude.toString()+"&zoom=12&format=jsonv2")
+          );
+          if(response.statusCode != 200){
+            _connection_available = false;
+          }else{
+            _connection_available = true;
+            Map data = _decoder.convert(response.body);
+            if(data.containsKey("address")) {
+              data = data["address"];
+              if (data.containsKey("country"))
+                _map_position["country"] = data["country"];
+              if (data.containsKey("state"))
+                _map_position["state"] = data["state"];
+              if (data.containsKey("county"))
+                _map_position["county"] = data["county"];
+              if (data.containsKey("village")) {
+                _map_position["city"] = data["village"];
+              }
+              else {
+                if (data.containsKey("city"))
+                  _map_position["city"] = data["city"];
+              }
+            }
           }
+        }catch(error){
+          _connection_available = false;
         }
       }
       Future.delayed(Duration(seconds: 1));
