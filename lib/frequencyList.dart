@@ -35,8 +35,10 @@ class FrequencyList{//the structure stores a list of values and the frequencies 
     return _max;
   }
   double? get avg{
-    if(_data.length == 0)return null;
-    return toPrecision(_total / _data.length);
+    int n = 0;
+    for(int samples in _data.values)n += samples;
+    if(n == 0)return null;
+    return toPrecision(_total / n);
   }
   double get total{
     return _total;
